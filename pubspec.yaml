@@ -45,6 +45,7 @@ dependencies:
   permission_handler: ^11.3.1
   geolocator: ^10.0.0
   google_maps_flutter: ^2.9.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_lints: ^6.0.0
@@ -57,7 +58,7 @@ flutter_launcher_icons:
   image_path: "assets/images/logo_setetes.png"
   min_sdk_android: 21 # android min sdk min:16, default 21
   adaptive_icon_background: "#ffffff"
-  adaptive_icon_fore  ground: "assets/images/logo_setetes.png"
+  adaptive_icon_foreground: "assets/images/logo_setetes.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
