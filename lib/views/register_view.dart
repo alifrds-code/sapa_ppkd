@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/batch_model.dart';
 import '../models/training_model.dart';
+import 'main_screen.dart'; // <-- Tambahan import Main Screen
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -102,8 +103,13 @@ class _RegisterViewState extends State<RegisterView> {
           backgroundColor: Colors.green,
         ),
       );
-      // Nanti diarahkan ke Dashboard. Sementara kita print dulu
-      print("Token tersimpan, siap ke Dashboard!");
+
+      // Nanti diarahkan ke MainScreen. Sementara kita print dulu
+      print("Token tersimpan, siap ke MainScreen!");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
     } else {
       // Gagal! Tampilkan pesan error dari server
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-// Import file-file buatan kita
 import 'providers/auth_provider.dart';
 import 'shared_preferences/token_storage.dart';
-// Ini contoh kalau udah ada file UI-nya, disesuaikan aja namanya nanti
-import 'views/register_view.dart';
 import 'views/login_view.dart';
-// import 'views/dashboard_view.dart';
+import 'views/main_screen.dart'; // <-- Pastikan MainScreen di-import
 
 void main() async {
   // Wajib ditambahin kalau kita mau ngecek memory HP sebelum aplikasi jalan
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Cek apakah token udah ada di HP
+  // Cek apakah token udah ada di brankas HP
   bool isLoggedIn = await TokenStorage.hasToken();
 
   runApp(MyApp(isLoggedIn: isLoggedIn));
@@ -26,29 +23,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Di sinilah kita pasang "Gardu Listrik" Provider-nya
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
-        // Nanti kalau ada provider buat absen, tambahin di sini
+        // Nanti provider Dashboard kita taruh di sini juga
       ],
       child: MaterialApp(
-        title: 'Absensi PPKD',
-        debugShowCheckedModeBanner:
-            false, // Ngilangin pita merah "Debug" di pojok kanan atas
+        title: 'SAPA PPKD',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-          ), // Warna dasar aplikasi
+          // Gua sekalian sesuaikan warna dasarnya sama desain premium lu
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF003F87)),
           useMaterial3: true,
         ),
 
-        // Logika Auto-Login
-        // Kalau isLoggedIn = true, ke Dashboard. Kalau false, ke Register.
-        // (Catatan: Ini dikomen dulu karena file UI-nya belum kita buat)
-        // home: isLoggedIn ? const DashboardView() : const RegisterView(),
-        home:
-            const LoginView(), // Sementara kita langsung ke LoginView aja dulu, nanti diganti kalau udah ada DashboardView-nya
+        // --- LOGIKA AUTO-LOGIN AKTIF ---
+        // Kalau isLoggedIn = true (ada token), langsung ke MainScreen.
+        // Kalau false (kosong), lempar ke LoginView.
+        home: isLoggedIn ? const MainScreen() : const LoginView(),
       ),
     );
   }

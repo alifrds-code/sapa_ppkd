@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // <-- Tambahan buat format tanggal otomatis
 
 import '../api/endpoint.dart';
 import '../shared_preferences/token_storage.dart';
 import '../models/profile_model.dart';
 import '../models/absen_today_model.dart';
+import '../models/absen_stats_model.dart'; // <-- Tambahan model statistik
 
 class DashboardService {
   // Fungsi internal untuk nyiapin Header + Token otomatis
@@ -42,8 +44,11 @@ class DashboardService {
   Future<AbsenTodayModel?> fetchAbsenToday() async {
     try {
       var headers = await _getHeaders();
+      // Bikin format tanggal YYYY-MM-DD buat hari ini
+      String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
       var response = await http.get(
-        Uri.parse(Endpoints.absenToday),
+        Uri.parse("${Endpoints.absenToday}?attendance_date=$today"),
         headers: headers,
       );
 
@@ -59,6 +64,155 @@ class DashboardService {
         throw Exception(
           jsonResponse['message'] ?? "Gagal mengambil data absen",
         );
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 3. Tembak API Update Profile (PUT)
+  Future<void> updateProfile({required String name}) async {
+    try {
+      var headers = await _getHeaders();
+      var response = await http.put(
+        Uri.parse(
+          Endpoints.profile,
+        ), // Pakai endpoint yang sama, tapi method-nya PUT
+        headers: headers,
+        body: jsonEncode({"name": name}),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode != 200) {
+        throw Exception(jsonResponse['message'] ?? "Gagal memperbarui profil");
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 4. Tembak API Update Foto Profil
+  Future<void> updateProfilePhoto(String base64Image) async {
+    try {
+      var headers = await _getHeaders();
+
+      // Asumsi dari info lu, url-nya /api/profile/photo
+      // Kita pakai method POST (standar Laravel buat upload/update sub-resource)
+      var response = await http.put(
+        Uri.parse("${Endpoints.profile}/photo"),
+        headers: headers,
+        body: jsonEncode({"profile_photo": base64Image}),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      // Status 200 (OK)
+      if (response.statusCode != 200) {
+        throw Exception(
+          jsonResponse['message'] ?? "Gagal memperbarui foto profil",
+        );
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 5. Tembak API Statistik Absen
+  Future<AbsenStatsModel> fetchAbsenStats() async {
+    try {
+      var headers = await _getHeaders();
+
+      // Kita ambil statistik bulan ini (Dari tanggal 1 sampai hari ini)
+      DateTime now = DateTime.now();
+      String startDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime(now.year, now.month, 1));
+      // Hari terakhir bulan ini: Set ke bulan+1, hari ke-0
+      String endDate = DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateTime(now.year, now.month + 1, 0));
+
+      var response = await http.get(
+        Uri.parse("${Endpoints.absenStats}?start=$startDate&end=$endDate"),
+        headers: headers,
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return AbsenStatsModel.fromJson(jsonResponse['data']);
+      } else {
+        throw Exception(jsonResponse['message'] ?? "Gagal mengambil statistik");
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 6. Tembak API Check In
+  Future<void> checkIn({
+    required double lat,
+    required double lng,
+    required String address,
+  }) async {
+    try {
+      var headers = await _getHeaders();
+      String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      String time = DateFormat('HH:mm').format(DateTime.now());
+
+      var response = await http.post(
+        Uri.parse(
+          "${Endpoints.baseUrl}/api/absen/check-in",
+        ), // Sesuaikan kalau beda
+        headers: headers,
+        body: jsonEncode({
+          "attendance_date": today,
+          "check_in": time,
+          "check_in_lat": lat,
+          "check_in_lng": lng,
+          "check_in_address": address,
+          "status": "masuk",
+        }),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(jsonResponse['message'] ?? "Gagal Check In");
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 7. Tembak API Check Out
+  Future<void> checkOut({
+    required double lat,
+    required double lng,
+    required String address,
+  }) async {
+    try {
+      var headers = await _getHeaders();
+      String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      String time = DateFormat('HH:mm').format(DateTime.now());
+
+      var response = await http.post(
+        Uri.parse(
+          "${Endpoints.baseUrl}/api/absen/check-out",
+        ), // Sesuaikan kalau beda
+        headers: headers,
+        body: jsonEncode({
+          "attendance_date": today,
+          "check_out": time,
+          "check_out_lat": lat,
+          "check_out_lng": lng,
+          "check_out_address": address,
+        }),
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception(jsonResponse['message'] ?? "Gagal Check Out");
       }
     } catch (e) {
       throw Exception(e.toString().replaceAll("Exception: ", ""));

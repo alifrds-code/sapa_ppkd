@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import 'register_view.dart';
-// import 'dashboard_view.dart'; // Nanti dibuka kalau file dashboard udah ada
+import 'main_screen.dart'; // Nanti dibuka kalau file main screen udah ada (Sekarang udah dibuka!)
 
 class LoginView extends StatefulWidget {
   const LoginView({super.key});
@@ -43,14 +43,13 @@ class _LoginViewState extends State<LoginView> {
         ),
       );
 
-      // TODO: Arahkan ke Dashboard
-      print("Token dapet! Siap pindah ke Dashboard.");
-      /* Nanti kodenya begini:
+      // TODO: Arahkan ke MainScreen
+      print("Token dapet! Siap pindah ke MainScreen.");
+      // Kodenya begini:
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const DashboardView()),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
-      */
     } else {
       // Gagal Login
       ScaffoldMessenger.of(context).showSnackBar(
