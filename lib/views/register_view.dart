@@ -96,7 +96,7 @@ class _RegisterViewState extends State<RegisterView> {
 
     // 3. Cek hasil dari server
     if (errorMessage == null) {
-      // Sukses!
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Registrasi Berhasil!"),
@@ -104,8 +104,6 @@ class _RegisterViewState extends State<RegisterView> {
         ),
       );
 
-      // Nanti diarahkan ke MainScreen. Sementara kita print dulu
-      print("Token tersimpan, siap ke MainScreen!");
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -120,21 +118,49 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   Widget build(BuildContext context) {
-    // Ambil state provider buat ngecek loading & data batch
     final authProvider = Provider.of<AuthProvider>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1A1C1E) : const Color(0xFFF9F9F9);
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1C1C);
+    final textSecondary = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final inputFill = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F6FA);
+    final inputBorder = isDark ? Colors.white12 : const Color(0xFFDDE3EC);
+
+    InputDecoration buildInput(String label, {Widget? prefix, Widget? suffix}) {
+      return InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: textSecondary),
+        filled: true,
+        fillColor: inputFill,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: Color(0xFF003F87), width: 2)),
+        prefixIcon: prefix,
+        suffixIcon: suffix,
+      );
+    }
 
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text("Daftar Akun PPKD"),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
+        backgroundColor: bgColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textPrimary, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Daftar Akun",
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w800, fontSize: 18),
+        ),
+        centerTitle: true,
       ),
       body: authProvider.batches.isEmpty && authProvider.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            ) // Muter-muter awal pas ambil Batch
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -142,103 +168,85 @@ class _RegisterViewState extends State<RegisterView> {
                   Center(
                     child: GestureDetector(
                       onTap: _pickImage,
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage: _imageFile != null
-                            ? FileImage(_imageFile!)
-                            : null,
-                        child: _imageFile == null
-                            ? const Icon(
-                                Icons.camera_alt,
-                                size: 40,
-                                color: Colors.grey,
-                              )
-                            : null,
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFF003F87), width: 2),
+                        ),
+                        child: CircleAvatar(
+                          radius: 48,
+                          backgroundColor: isDark ? const Color(0xFF2C2E30) : Colors.grey[200],
+                          backgroundImage: _imageFile != null ? FileImage(_imageFile!) : null,
+                          child: _imageFile == null
+                              ? Icon(Icons.camera_alt, size: 32, color: textSecondary)
+                              : null,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  const Center(child: Text("Ketuk untuk tambah foto")),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 8),
+                  Center(child: Text("Ketuk untuk tambah foto", style: TextStyle(fontSize: 12, color: textSecondary))),
+                  const SizedBox(height: 24),
 
                   // --- INPUT TEKS ---
                   TextField(
                     controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Nama Lengkap",
-                      border: OutlineInputBorder(),
-                    ),
+                    style: TextStyle(color: textPrimary),
+                    decoration: buildInput("Nama Lengkap", prefix: Icon(Icons.person_outline, color: textSecondary)),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
                   TextField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: "Email",
-                      border: OutlineInputBorder(),
-                    ),
+                    style: TextStyle(color: textPrimary),
+                    decoration: buildInput("Email", prefix: Icon(Icons.email_outlined, color: textSecondary)),
                   ),
-                  const SizedBox(height: 15),
-
-                  // --- TAMBAHAN: INPUT PASSWORD DENGAN LOGO MATA ---
+                  const SizedBox(height: 14),
                   TextField(
                     controller: _passwordController,
-                    obscureText: _obscurePassword, // Pakai variabel state
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          // Ganti icon berdasarkan status _obscurePassword
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
-                        ),
-                        onPressed: () {
-                          // Ubah status tertutup/terbuka saat diklik
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                    obscureText: _obscurePassword,
+                    style: TextStyle(color: textPrimary),
+                    decoration: buildInput(
+                      "Password",
+                      prefix: Icon(Icons.lock_outline, color: textSecondary),
+                      suffix: IconButton(
+                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: textSecondary),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 20),
 
                   // --- RADIO BUTTON JENIS KELAMIN ---
-                  const Text(
-                    "Jenis Kelamin",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
+                  Text("Jenis Kelamin", style: TextStyle(fontWeight: FontWeight.bold, color: textPrimary, fontSize: 14)),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       Radio<String>(
                         value: 'L',
                         groupValue: _selectedGender,
-                        onChanged: (val) =>
-                            setState(() => _selectedGender = val),
+                        activeColor: const Color(0xFF003F87),
+                        onChanged: (val) => setState(() => _selectedGender = val),
                       ),
-                      const Text("Laki-laki"),
-                      const SizedBox(width: 20),
+                      Text("Laki-laki", style: TextStyle(color: textPrimary)),
+                      const SizedBox(width: 16),
                       Radio<String>(
                         value: 'P',
                         groupValue: _selectedGender,
-                        onChanged: (val) =>
-                            setState(() => _selectedGender = val),
+                        activeColor: const Color(0xFF003F87),
+                        onChanged: (val) => setState(() => _selectedGender = val),
                       ),
-                      const Text("Perempuan"),
+                      Text("Perempuan", style: TextStyle(color: textPrimary)),
                     ],
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
 
                   // --- DROPDOWN BATCH ---
                   DropdownButtonFormField<BatchModel>(
-                    decoration: const InputDecoration(
-                      labelText: "Pilih Batch",
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: buildInput("Pilih Batch"),
+                    dropdownColor: cardColor,
+                    style: TextStyle(color: textPrimary, fontSize: 14),
                     value: _selectedBatch,
                     items: authProvider.batches.map((batch) {
                       return DropdownMenuItem(
@@ -249,22 +257,20 @@ class _RegisterViewState extends State<RegisterView> {
                     onChanged: (val) {
                       setState(() {
                         _selectedBatch = val;
-                        // Kalau batch diganti, reset pilihan trainingnya
                         _selectedTraining = null;
                       });
                     },
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 14),
 
-                  // --- DROPDOWN TRAINING (Muncul Otomatis Sesuai Batch) ---
+                  // --- DROPDOWN TRAINING ---
                   DropdownButtonFormField<TrainingModel>(
-                    decoration: const InputDecoration(
-                      labelText: "Pilih Pelatihan",
-                      border: OutlineInputBorder(),
-                    ),
+                    decoration: buildInput("Pilih Pelatihan"),
+                    dropdownColor: cardColor,
+                    style: TextStyle(color: textPrimary, fontSize: 14),
                     value: _selectedTraining,
                     items: _selectedBatch == null
-                        ? [] // Kosong kalau belum pilih batch
+                        ? []
                         : _selectedBatch!.trainings.map((training) {
                             return DropdownMenuItem(
                               value: training,
@@ -272,32 +278,35 @@ class _RegisterViewState extends State<RegisterView> {
                             );
                           }).toList(),
                     onChanged: (val) {
-                      setState(() {
-                        _selectedTraining = val;
-                      });
+                      setState(() => _selectedTraining = val);
                     },
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 28),
 
                   // --- TOMBOL DAFTAR ---
-                  SizedBox(
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: authProvider.isLoading
-                          ? null
-                          : _submitRegister,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                  InkWell(
+                    onTap: authProvider.isLoading ? null : _submitRegister,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF003F87), Color(0xFF0056B3)],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF003F87).withOpacity(0.3),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: authProvider.isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
-                              "DAFTAR",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      child: Center(
+                        child: authProvider.isLoading
+                            ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("DAFTAR", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: 0.5)),
+                      ),
                     ),
                   ),
                 ],

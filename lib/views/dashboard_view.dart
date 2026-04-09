@@ -9,6 +9,7 @@ import '../services/dashboard_service.dart';
 import '../models/profile_model.dart';
 import '../models/absen_today_model.dart';
 import '../models/absen_stats_model.dart';
+import 'absen_view.dart';
 
 class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
@@ -130,66 +131,44 @@ class _DashboardViewState extends State<DashboardView> {
     }
   }
 
-  // --- LOGIKA TOMBOL ABSEN ---
-  void _handleAbsen(AbsenTodayModel? absenToday) async {
-    if (_currentPosition == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Tunggu lokasi ditemukan!")));
-      return;
-    }
-
-    bool isCheckIn =
-        absenToday == null || (absenToday.checkInTime ?? "").isEmpty;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+  // --- NAVIGASI KE HALAMAN ABSEN ---
+  void _navigateToAbsen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AbsenView()),
     );
-
-    try {
-      if (isCheckIn) {
-        await _dashboardService.checkIn(
-          lat: _currentPosition!.latitude,
-          lng: _currentPosition!.longitude,
-          address: _currentAddress,
-        );
-      } else {
-        await _dashboardService.checkOut(
-          lat: _currentPosition!.latitude,
-          lng: _currentPosition!.longitude,
-          address: _currentAddress,
-        );
-      }
-
-      if (!mounted) return;
-      Navigator.pop(context); // Tutup loading
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isCheckIn ? "Berhasil Check In!" : "Berhasil Check Out!",
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      _loadAllData(); // Refresh API
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-      );
+    // Refresh data setelah kembali dari AbsenView
+    if (result == true || result == null) {
+      _loadAllData();
     }
+  }
+
+  // --- GREETING DINAMIS ---
+  String _getGreeting(String firstName) {
+    final hour = DateTime.now().hour;
+    String greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = 'Selamat Pagi';
+    } else if (hour >= 12 && hour < 15) {
+      greeting = 'Selamat Siang';
+    } else if (hour >= 15 && hour < 19) {
+      greeting = 'Selamat Sore';
+    } else {
+      greeting = 'Selamat Malam';
+    }
+    return '$greeting, $firstName! 👋';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1A1C1E) : const Color(0xFFF9F9F9);
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1C1C);
+    final textSecondary = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF9F9F9,
-      ), // Warna background dari Tailwind lu
+      backgroundColor: bgColor,
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async => _loadAllData(),
@@ -212,7 +191,38 @@ class _DashboardViewState extends State<DashboardView> {
                   );
                 }
                 if (profileSnapshot.hasError) {
-                  return Center(child: Text("Error: ${profileSnapshot.error}"));
+                  return SizedBox(
+                    height: 300,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.cloud_off, size: 48, color: Colors.grey.shade400),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Gagal memuat data",
+                            style: TextStyle(color: textSecondary, fontSize: 14),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Periksa koneksi internet Anda",
+                            style: TextStyle(color: textSecondary, fontSize: 12),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _loadAllData,
+                            icon: const Icon(Icons.refresh, size: 18),
+                            label: const Text("Coba Lagi"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF003F87),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
                 }
 
                 final user = profileSnapshot.data!;
@@ -277,16 +287,18 @@ class _DashboardViewState extends State<DashboardView> {
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 1.0,
-                        color: Colors.grey.shade600,
+                        color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Selamat Pagi, ${user.name.split(' ').first}!",
-                      style: const TextStyle(
+                      _getGreeting(user.name.split(' ').first),
+                      style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF1A1C1C),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF1A1C1C),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -295,7 +307,7 @@ class _DashboardViewState extends State<DashboardView> {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey.shade700,
+                        color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -313,10 +325,7 @@ class _DashboardViewState extends State<DashboardView> {
 
                         final absenToday = absenSnapshot.data;
 
-                        // Logika Penentuan Tombol & Status
-                        bool isCheckIn =
-                            absenToday == null ||
-                            (absenToday.checkInTime ?? "").isEmpty;
+                        // Logika Penentuan Status (isCheckIn tidak dipakai lagi, tombol navigasi ke AbsenView)
                         bool isCheckOut =
                             absenToday != null &&
                             (absenToday.checkInTime ?? "").isNotEmpty &&
@@ -374,7 +383,7 @@ class _DashboardViewState extends State<DashboardView> {
                                 horizontal: 24,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: cardColor,
                                 borderRadius: BorderRadius.circular(24),
                                 boxShadow: [
                                   BoxShadow(
@@ -429,20 +438,18 @@ class _DashboardViewState extends State<DashboardView> {
                                     _timeString.isEmpty
                                         ? "--:--:--"
                                         : _timeString,
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 56,
                                       fontWeight: FontWeight.w900,
-                                      color: Color(0xFF003F87),
+                                      color: isDark ? Colors.white : const Color(0xFF003F87),
                                       letterSpacing: -1.5,
                                     ),
                                   ),
                                   const SizedBox(height: 32),
 
-                                  // Tombol Absen Gradient
+                                  // Tombol Absen → Navigasi ke AbsenView
                                   InkWell(
-                                    onTap: isDone
-                                        ? null
-                                        : () => _handleAbsen(absenToday),
+                                    onTap: _navigateToAbsen,
                                     borderRadius: BorderRadius.circular(16),
                                     child: Container(
                                       width: double.infinity,
@@ -503,8 +510,8 @@ class _DashboardViewState extends State<DashboardView> {
                                       Flexible(
                                         child: Text(
                                           _isLoadingLocation
-                                              ? "Mencari lokasi..."
-                                              : "PPKD Jakarta",
+                                              ? 'Mencari lokasi...'
+                                              : _currentAddress,
                                           style: const TextStyle(
                                             color: Color(0xFF727784),
                                             fontSize: 13,
@@ -523,87 +530,105 @@ class _DashboardViewState extends State<DashboardView> {
                             // --- BENTO BOX 2: MAP / LOKASI DETAIL ---
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFE8F0FE,
-                                ), // Warna biru soft sebagai ganti gambar peta
+                                color: isDark ? const Color(0xFF1E3A5F) : const Color(0xFFE8F0FE),
                                 borderRadius: BorderRadius.circular(24),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.9),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          "LOKASI SAYA",
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF003F87),
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF0056B3),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black12,
-                                              blurRadius: 10,
+                                  // Map preview image
+                                  ClipRRect(
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                                    child: _currentPosition != null
+                                        ? Image.network(
+                                            'https://maps.googleapis.com/maps/api/staticmap?center=${_currentPosition!.latitude},${_currentPosition!.longitude}&zoom=15&size=600x200&maptype=roadmap&markers=color:blue%7C${_currentPosition!.latitude},${_currentPosition!.longitude}&key=YOUR_API_KEY',
+                                            height: 120,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) => Container(
+                                              height: 120,
+                                              width: double.infinity,
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: isDark
+                                                      ? [const Color(0xFF1E3A5F), const Color(0xFF0D253F)]
+                                                      : [const Color(0xFFBBD0FF), const Color(0xFFE8F0FE)],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                              ),
+                                              child: Stack(
+                                                alignment: Alignment.center,
+                                                children: [
+                                                  Icon(Icons.map, size: 60, color: isDark ? Colors.white10 : Colors.white38),
+                                                  Icon(Icons.location_on, size: 32, color: const Color(0xFF003F87).withOpacity(0.7)),
+                                                ],
+                                              ),
                                             ),
-                                          ],
-                                        ),
-                                        child: const Icon(
-                                          Icons.my_location,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 30),
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          "Titik Kordinat Saat Ini",
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1A1C1C),
+                                          )
+                                        : Container(
+                                            height: 120,
+                                            width: double.infinity,
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: isDark
+                                                    ? [const Color(0xFF1E3A5F), const Color(0xFF0D253F)]
+                                                    : [const Color(0xFFBBD0FF), const Color(0xFFE8F0FE)],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                            ),
+                                            child: Stack(
+                                              alignment: Alignment.center,
+                                              children: [
+                                                Icon(Icons.map, size: 60, color: isDark ? Colors.white10 : Colors.white38),
+                                                _isLoadingLocation
+                                                    ? const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF003F87)))
+                                                    : Icon(Icons.location_on, size: 32, color: const Color(0xFF003F87).withOpacity(0.7)),
+                                              ],
+                                            ),
                                           ),
+                                  ),
+                                  // Info lokasi
+                                  Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.white.withOpacity(0.9),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(Icons.location_on, color: Color(0xFF003F87), size: 20),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _isLoadingLocation
-                                              ? "Mengambil data satelit..."
-                                              : _currentAddress,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey.shade700,
-                                            height: 1.5,
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                "LOKASI SAYA",
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: textSecondary,
+                                                  letterSpacing: 1.0,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                _isLoadingLocation ? "Mencari lokasi..." : _currentAddress,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: textPrimary,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ],
@@ -625,7 +650,7 @@ class _DashboardViewState extends State<DashboardView> {
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2.0,
-                        color: Colors.grey.shade600,
+                        color: textSecondary,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -679,6 +704,59 @@ class _DashboardViewState extends State<DashboardView> {
                         );
                       },
                     ),
+
+                    const SizedBox(height: 32),
+
+                    // --- INFO & TIPS SECTION ---
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: isDark
+                              ? [const Color(0xFF1E3A5F), const Color(0xFF2C2E30)]
+                              : [const Color(0xFFE8F0FE), const Color(0xFFF3F6FA)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF003F87).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(Icons.lightbulb_outline, color: Color(0xFF003F87), size: 22),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  "INFORMASI PENTING",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                    color: textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTipItem("Pastikan GPS aktif sebelum check-in", Icons.gps_fixed, textPrimary, textSecondary),
+                          const SizedBox(height: 10),
+                          _buildTipItem("Check-in paling lambat pukul 08:00 WIB", Icons.access_time, textPrimary, textSecondary),
+                          const SizedBox(height: 10),
+                          _buildTipItem("Ajukan izin sebelum hari yang dimaksud", Icons.event_available, textPrimary, textSecondary),
+                        ],
+                      ),
+                    ),
                   ],
                 );
               },
@@ -697,11 +775,16 @@ class _DashboardViewState extends State<DashboardView> {
     required Color iconColor,
     required Color bgColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1C1C);
+    final textSecondary = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -725,10 +808,10 @@ class _DashboardViewState extends State<DashboardView> {
             const SizedBox(height: 16),
             Text(
               count,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF1A1C1C),
+                color: textPrimary,
               ),
             ),
             const SizedBox(height: 2),
@@ -738,12 +821,27 @@ class _DashboardViewState extends State<DashboardView> {
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
-                color: Colors.grey.shade600,
+                color: textSecondary,
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTipItem(String text, IconData icon, Color textPrimary, Color textSecondary) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF003F87)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textPrimary),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -21,7 +21,7 @@ class Endpoints {
 
   static String deleteAbsen(int id) => "$baseUrl/api/absen/$id";
 
-  // Izin
+  // Izin (endpoint yg aktif di server: /api/izin, bukan /api/absen/izin)
   static const String izin = "$baseUrl/api/izin";
 
   // Device Token

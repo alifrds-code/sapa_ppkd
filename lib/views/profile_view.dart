@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // import library foto dan dart io udah dihapus dari sini
+import 'package:provider/provider.dart';
 
+import '../providers/theme_provider.dart';
 import '../services/dashboard_service.dart';
 import '../models/profile_model.dart';
 import '../shared_preferences/token_storage.dart';
@@ -72,34 +73,32 @@ class _ProfileViewState extends State<ProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1A1C1E) : const Color(0xFFF9F9F9);
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9), // Background Surface
-      // Top App Bar (Glassmorphism / Transparan)
+      backgroundColor: bgColor,
+      // Top App Bar
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF9F9F9).withOpacity(0.9),
+        backgroundColor: bgColor,
         elevation: 0,
-        scrolledUnderElevation: 0, // Biar nggak berubah warna pas di-scroll
-        title: const Text(
-          "SAPA PPKD",
-          style: TextStyle(
-            color: Color(0xFF003F87),
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(12),
+        scrolledUnderElevation: 0,
+        title: Row(
+          children: [
+            Icon(Icons.grid_view, size: 22, color: const Color(0xFF003F87)),
+            const SizedBox(width: 8),
+            const Text(
+              "SAPA PPKD",
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF003F87),
+                letterSpacing: -0.5,
               ),
-              child: const Icon(Icons.grid_view, color: Color(0xFF003F87)),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
 
       // FutureBuilder buat narik API Profile secara otomatis pas halaman dibuka
@@ -196,18 +195,19 @@ class _ProfileViewState extends State<ProfileView> {
                   const SizedBox(height: 20),
                   Text(
                     user.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
+                      color: isDark ? Colors.white : const Color(0xFF1A1C1C),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     "BATCH ${user.batchKe ?? '-'} | PPKD",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF003F87),
+                      color: isDark ? const Color(0xFF5B9CF6) : const Color(0xFF003F87),
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -216,7 +216,7 @@ class _ProfileViewState extends State<ProfileView> {
                   // --- BENTO BOX: INFORMASI DATA DIRI ---
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: cardColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
@@ -228,18 +228,20 @@ class _ProfileViewState extends State<ProfileView> {
                     ),
                     child: Column(
                       children: [
-                        _buildInfoRow("Email", user.email, Icons.email),
-                        const Divider(height: 1, color: Color(0xFFF3F3F3)),
+                        _buildInfoRow("Email", user.email, Icons.email, isDark: isDark),
+                        Divider(height: 1, color: isDark ? Colors.white10 : const Color(0xFFF3F3F3)),
                         _buildInfoRow(
                           "Jenis Kelamin",
                           user.jenisKelamin == 'L' ? 'Laki-laki' : 'Perempuan',
                           Icons.person_outline,
+                          isDark: isDark,
                         ),
-                        const Divider(height: 1, color: Color(0xFFF3F3F3)),
+                        Divider(height: 1, color: isDark ? Colors.white10 : const Color(0xFFF3F3F3)),
                         _buildInfoRow(
                           "Pelatihan",
                           user.trainingTitle ?? '-',
                           Icons.school,
+                          isDark: isDark,
                         ),
                       ],
                     ),
@@ -255,7 +257,7 @@ class _ProfileViewState extends State<ProfileView> {
                         fontSize: 11,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
-                        color: Colors.grey.shade500,
+                        color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
                       ),
                     ),
                   ),
@@ -267,20 +269,18 @@ class _ProfileViewState extends State<ProfileView> {
                     title: "Edit Profil",
                     iconColor: const Color(0xFF003F87),
                     bgColor: const Color(0xFFD7E2FF),
+                    isDark: isDark,
                     onTap: () async {
-                      // Buka halaman edit dan tunggu hasilnya
                       final result = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => EditProfileView(
                             currentUser: user,
-                          ), // Kirim data user saat ini
+                          ),
                         ),
                       );
-
-                      // Kalau kembaliannya true (berhasil edit), kita refresh halamannya biar namanya langsung berubah
                       if (result == true) {
-                        _refreshProfileData(); // PERUBAHAN: Panggil fungsi refresh API
+                        _refreshProfileData();
                       }
                     },
                   ),
@@ -292,11 +292,40 @@ class _ProfileViewState extends State<ProfileView> {
                     title: "Ubah Password",
                     iconColor: const Color(0xFF003F87),
                     bgColor: const Color(0xFFD7E2FF),
+                    isDark: isDark,
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text("Fitur Ubah Password segera hadir"),
                         ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Tombol Dark Mode (Bonus 5.3)
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return _buildActionMenu(
+                        icon: themeProvider.isDarkMode
+                            ? Icons.light_mode
+                            : Icons.dark_mode,
+                        title: themeProvider.isDarkMode
+                            ? 'Mode Terang'
+                            : 'Mode Gelap',
+                        iconColor: themeProvider.isDarkMode
+                            ? Colors.amber.shade700
+                            : const Color(0xFF003F87),
+                        bgColor: themeProvider.isDarkMode
+                            ? Colors.amber.shade50
+                            : const Color(0xFFD7E2FF),
+                        trailing: Switch(
+                          value: themeProvider.isDarkMode,
+                          onChanged: (_) => themeProvider.toggleTheme(),
+                          activeColor: const Color(0xFF003F87),
+                        ),
+                        isDark: isDark,
+                        onTap: () => themeProvider.toggleTheme(),
                       );
                     },
                   ),
@@ -310,6 +339,7 @@ class _ProfileViewState extends State<ProfileView> {
                     bgColor: Colors.red.shade50,
                     textColor: Colors.red.shade700,
                     onTap: _logout,
+                    isDark: isDark,
                   ),
                 ],
               ),
@@ -323,7 +353,7 @@ class _ProfileViewState extends State<ProfileView> {
   // --- WIDGET HELPER BUAT BIKIN UI LEBIH RAPI ---
 
   // Baris Info Data Diri
-  Widget _buildInfoRow(String label, String value, IconData icon) {
+  Widget _buildInfoRow(String label, String value, IconData icon, {bool isDark = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -334,21 +364,22 @@ class _ProfileViewState extends State<ProfileView> {
             children: [
               Text(
                 label.toUpperCase(),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey,
                   letterSpacing: 1.0,
                 ),
               ),
               const SizedBox(height: 4),
               SizedBox(
-                width: 200, // Biar teks panjang nggak error (overflow)
+                width: 200,
                 child: Text(
                   value,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -368,15 +399,20 @@ class _ProfileViewState extends State<ProfileView> {
     required Color iconColor,
     required Color bgColor,
     Color textColor = Colors.black87,
+    Widget? trailing,
     required VoidCallback onTap,
+    bool isDark = false,
   }) {
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+    // Adjust text color for dark mode
+    final actualTextColor = (textColor == Colors.black87 && isDark) ? Colors.white : textColor;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -400,11 +436,11 @@ class _ProfileViewState extends State<ProfileView> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: textColor,
+                  color: actualTextColor,
                 ),
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            trailing ?? Icon(Icons.chevron_right, color: Colors.grey.shade400),
           ],
         ),
       ),

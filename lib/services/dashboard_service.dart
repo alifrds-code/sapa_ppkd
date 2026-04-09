@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // <-- Tambahan buat format tanggal otomatis
 
@@ -7,6 +8,7 @@ import '../shared_preferences/token_storage.dart';
 import '../models/profile_model.dart';
 import '../models/absen_today_model.dart';
 import '../models/absen_stats_model.dart'; // <-- Tambahan model statistik
+import '../models/absen_history_model.dart'; // <-- Model riwayat absen
 
 class DashboardService {
   // Fungsi internal untuk nyiapin Header + Token otomatis
@@ -36,7 +38,9 @@ class DashboardService {
         throw Exception(jsonResponse['message'] ?? "Gagal mengambil profil");
       }
     } catch (e) {
-      throw Exception(e.toString().replaceAll("Exception: ", ""));
+      debugPrint('[DashboardService] fetchProfile error: $e');
+      // Re-throw agar UI bisa menampilkan error message
+      rethrow;
     }
   }
 
@@ -60,13 +64,18 @@ class DashboardService {
           return AbsenTodayModel.fromJson(jsonResponse['data']);
         }
         return null;
+      } else if (response.statusCode == 404) {
+        // 404 = belum ada data absensi hari ini, ini normal → return null
+        return null;
       } else {
         throw Exception(
           jsonResponse['message'] ?? "Gagal mengambil data absen",
         );
       }
     } catch (e) {
-      throw Exception(e.toString().replaceAll("Exception: ", ""));
+      // Jangan crash kalau gagal ambil data absen hari ini, cukup return null
+      debugPrint('[DashboardService] fetchAbsenToday error: $e');
+      return null;
     }
   }
 
@@ -97,10 +106,9 @@ class DashboardService {
     try {
       var headers = await _getHeaders();
 
-      // Asumsi dari info lu, url-nya /api/profile/photo
-      // Kita pakai method POST (standar Laravel buat upload/update sub-resource)
-      var response = await http.put(
-        Uri.parse("${Endpoints.profile}/photo"),
+      // Sesuai API, method-nya POST bukan PUT
+      var response = await http.post(
+        Uri.parse(Endpoints.updatePhoto),
         headers: headers,
         body: jsonEncode({"profile_photo": base64Image}),
       );
@@ -143,10 +151,14 @@ class DashboardService {
       if (response.statusCode == 200) {
         return AbsenStatsModel.fromJson(jsonResponse['data']);
       } else {
-        throw Exception(jsonResponse['message'] ?? "Gagal mengambil statistik");
+        debugPrint('[DashboardService] fetchAbsenStats: ${response.statusCode} - ${jsonResponse['message']}');
+        // Return default stats (semua 0) supaya tidak crash
+        return AbsenStatsModel(totalAbsen: 0, totalMasuk: 0, totalIzin: 0, sudahAbsenHariIni: false);
       }
     } catch (e) {
-      throw Exception(e.toString().replaceAll("Exception: ", ""));
+      debugPrint('[DashboardService] fetchAbsenStats error: $e');
+      // Return default stats supaya tidak crash
+      return AbsenStatsModel(totalAbsen: 0, totalMasuk: 0, totalIzin: 0, sudahAbsenHariIni: false);
     }
   }
 
@@ -213,6 +225,56 @@ class DashboardService {
       var jsonResponse = jsonDecode(response.body);
       if (response.statusCode != 200 && response.statusCode != 201) {
         throw Exception(jsonResponse['message'] ?? "Gagal Check Out");
+      }
+    } catch (e) {
+      throw Exception(e.toString().replaceAll("Exception: ", ""));
+    }
+  }
+
+  // 8. Tembak API Riwayat Absen
+  Future<List<AbsenHistoryModel>> fetchHistory({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      var headers = await _getHeaders();
+
+      // Default: ambil riwayat bulan ini
+      DateTime now = DateTime.now();
+      startDate ??= DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month, 1));
+      endDate ??= DateFormat('yyyy-MM-dd').format(DateTime(now.year, now.month + 1, 0));
+
+      var response = await http.get(
+        Uri.parse("${Endpoints.absenHistory}?start=$startDate&end=$endDate"),
+        headers: headers,
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        List data = jsonResponse['data'] ?? [];
+        return data.map((e) => AbsenHistoryModel.fromJson(e)).toList();
+      } else {
+        throw Exception(jsonResponse['message'] ?? "Gagal mengambil riwayat");
+      }
+    } catch (e) {
+      debugPrint('[DashboardService] fetchHistory error: $e');
+      return []; // Return empty list supaya tidak crash
+    }
+  }
+
+  // 9. Hapus data absen berdasarkan ID (Bonus)
+  Future<void> deleteAbsen(int id) async {
+    try {
+      var headers = await _getHeaders();
+      var response = await http.delete(
+        Uri.parse(Endpoints.deleteAbsen(id)),
+        headers: headers,
+      );
+
+      var jsonResponse = jsonDecode(response.body);
+      if (response.statusCode != 200) {
+        throw Exception(jsonResponse['message'] ?? "Gagal menghapus data absen");
       }
     } catch (e) {
       throw Exception(e.toString().replaceAll("Exception: ", ""));

@@ -80,6 +80,7 @@ class _EditProfileViewState extends State<EditProfileView> {
       // Balik ke halaman sebelumnya (ProfileView) dan kasih tau kalau update sukses (true)
       Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
       );
@@ -90,24 +91,36 @@ class _EditProfileViewState extends State<EditProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF1A1C1E) : const Color(0xFFF9F9F9);
+    final cardColor = isDark ? const Color(0xFF2C2E30) : Colors.white;
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1A1C1C);
+    final textSecondary = isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+    final inputFill = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF3F6FA);
+    final inputBorder = isDark ? Colors.white12 : const Color(0xFFDDE3EC);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F9),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text(
-          "Edit Profil",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF003F87),
+        backgroundColor: bgColor,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: textPrimary, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Edit Profil",
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w800, fontSize: 18),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // --- HEADER ILLUSTRATION ---
+            // --- HEADER FOTO ---
             Center(
               child: GestureDetector(
                 onTap: _pickImage,
@@ -117,9 +130,9 @@ class _EditProfileViewState extends State<EditProfileView> {
                     Container(
                       width: 100,
                       height: 100,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color(0xFFBBD0FF),
+                        color: isDark ? const Color(0xFF2C2E30) : const Color(0xFFBBD0FF),
                       ),
                       child: ClipOval(
                         child: _imageFile != null
@@ -129,10 +142,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                                       widget.currentUser.profilePhotoUrl!,
                                       fit: BoxFit.cover,
                                     )
-                                  : const Icon(
+                                  : Icon(
                                       Icons.person,
                                       size: 60,
-                                      color: Color(0xFF003F87),
+                                      color: isDark ? Colors.grey : const Color(0xFF003F87),
                                     )),
                       ),
                     ),
@@ -141,106 +154,82 @@ class _EditProfileViewState extends State<EditProfileView> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF003F87),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: bgColor, width: 2),
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            const Center(
-              child: Text(
-                "Ketuk untuk ubah foto",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+            const SizedBox(height: 8),
+            Center(
+              child: Text("Ketuk untuk ubah foto", style: TextStyle(fontSize: 12, color: textSecondary)),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 28),
 
-            // --- FORM EMAIL (READ ONLY / TIDAK BISA DIEDIT) ---
-            const Text(
-              "Email",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
+            // --- FORM EMAIL (READ ONLY) ---
+            Text("Email", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textSecondary, letterSpacing: 0.5)),
             const SizedBox(height: 8),
             TextField(
               controller: _emailController,
-              enabled: false, // BIKIN JADI ABU-ABU KARENA NGGAK BISA DIEDIT
+              enabled: false,
+              style: TextStyle(color: textSecondary),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.grey.shade200,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
-                prefixIcon: const Icon(Icons.email, color: Colors.grey),
+                fillColor: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade200,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+                disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+                prefixIcon: Icon(Icons.email_outlined, color: textSecondary),
               ),
             ),
             const SizedBox(height: 20),
 
             // --- FORM NAMA (BISA DIEDIT) ---
-            const Text(
-              "Nama Lengkap",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
+            Text("Nama Lengkap", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textSecondary, letterSpacing: 0.5)),
             const SizedBox(height: 8),
             TextField(
               controller: _nameController,
+              style: TextStyle(color: textPrimary),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
+                fillColor: inputFill,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: inputBorder)),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF003F87),
-                    width: 2,
-                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: Color(0xFF003F87), width: 2),
                 ),
-                prefixIcon: const Icon(Icons.person, color: Color(0xFF003F87)),
+                prefixIcon: const Icon(Icons.person_outline, color: Color(0xFF003F87)),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 36),
 
             // --- TOMBOL SIMPAN ---
-            SizedBox(
-              height: 55,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submitUpdate,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF003F87),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+            InkWell(
+              onTap: _isLoading ? null : _submitUpdate,
+              borderRadius: BorderRadius.circular(14),
+              child: Container(
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF003F87), Color(0xFF0056B3)],
                   ),
-                  elevation: 5,
-                  shadowColor: const Color(0xFF003F87).withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF003F87).withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        "SIMPAN PERUBAHAN",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
+                child: Center(
+                  child: _isLoading
+                      ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      : const Text("SIMPAN PERUBAHAN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 0.5)),
+                ),
               ),
             ),
           ],
