@@ -1,36 +1,35 @@
 import 'package:flutter/material.dart';
 import '../models/batch_model.dart';
-import '../services/auth_services.dart'; // <-- Typo nama file udah dibenerin di sini
+import '../services/auth_services.dart';
 import '../shared_preferences/token_storage.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
 
-  // ----- STATE VARIABEL -----
+  // Loading state buat nampilin spinner di UI
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  // Data batch buat dropdown di halaman register
   List<BatchModel> _batches = [];
   List<BatchModel> get batches => _batches;
 
-  // ----- FUNGSI 1: Ambil Data Dropdown Batch & Training -----
+  // Ambil data batch & training dari API buat dropdown
   Future<void> fetchBatches() async {
     try {
       _isLoading = true;
-      notifyListeners(); // Kasih tau UI buat nampilin loading
+      notifyListeners();
 
       _batches = await _authService.getBatches();
     } catch (e) {
       print("Error fetch batches: $e");
-      // Kita biarin kosong kalau error, nanti UI bisa nanganin
     } finally {
       _isLoading = false;
-      notifyListeners(); // Kasih tau UI loading selesai
+      notifyListeners();
     }
   }
 
-  // ----- FUNGSI 2: Proses Registrasi -----
-  // Mengembalikan String. Kalau null berarti sukses, kalau ada isi berarti pesan error.
+  // Proses registrasi — return null kalau sukses, return pesan error kalau gagal
   Future<String?> register({
     required String name,
     required String email,
@@ -42,10 +41,9 @@ class AuthProvider with ChangeNotifier {
   }) async {
     try {
       _isLoading = true;
-      notifyListeners(); // Tombol register jadi muter-muter
+      notifyListeners();
 
-      // Nembak API lewat AuthService
-      final responseData = await _authService.register(
+      var responseData = await _authService.register(
         name: name,
         email: email,
         password: password,
@@ -55,48 +53,47 @@ class AuthProvider with ChangeNotifier {
         trainingId: trainingId,
       );
 
-      // Kalau sukses, kita ambil token dari response
-      final token = responseData['token'];
+      // Simpan token kalau ada
+      var token = responseData['token'];
       if (token != null) {
-        await TokenStorage.saveToken(token); // Simpan token ke HP
+        await TokenStorage.saveToken(token);
       }
 
-      return null; // Null berarti SUKSES, tidak ada error
+      return null; // null = sukses
     } catch (e) {
-      // Potong kata "Exception: " biar yang muncul cuma pesannya aja
       return e.toString().replaceAll("Exception: ", "");
     } finally {
       _isLoading = false;
-      notifyListeners(); // Matiin efek muter-muter
+      notifyListeners();
     }
   }
 
-  // ----- FUNGSI 3: Proses Login -----
+  // Proses login — return null kalau sukses, return pesan error kalau gagal
   Future<String?> login({
     required String email,
     required String password,
   }) async {
     try {
       _isLoading = true;
-      notifyListeners(); // Muter-muter tombol login
+      notifyListeners();
 
-      final responseData = await _authService.login(
+      var responseData = await _authService.login(
         email: email,
         password: password,
       );
 
-      final token = responseData['token'];
+      // Simpan token kalau ada
+      var token = responseData['token'];
       if (token != null) {
-        await TokenStorage.saveToken(token); // Simpan token ke HP
+        await TokenStorage.saveToken(token);
       }
 
-      return null; // Null berarti SUKSES
+      return null; // null = sukses
     } catch (e) {
-      // Potong kata "Exception: " biar UI-nya bersih
       return e.toString().replaceAll("Exception: ", "");
     } finally {
       _isLoading = false;
-      notifyListeners(); // Matiin muter-muter
+      notifyListeners();
     }
   }
 }

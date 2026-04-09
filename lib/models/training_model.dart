@@ -1,3 +1,4 @@
+// Model buat data pelatihan
 class TrainingModel {
   final int id;
   final String title;

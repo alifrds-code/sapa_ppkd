@@ -1,3 +1,4 @@
+// Model buat statistik absen (total hadir, izin, dll)
 class AbsenStatsModel {
   final int totalAbsen;
   final int totalMasuk;

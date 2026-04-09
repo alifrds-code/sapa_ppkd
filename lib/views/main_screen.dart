@@ -12,9 +12,10 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
+  // Index tab yang lagi aktif (0 = Beranda, 1 = Riwayat, 2 = Profil)
   int _selectedIndex = 0;
 
-  // 3 tab: Beranda, Riwayat, Profil (Izin sudah digabung ke halaman Absen)
+  // Daftar halaman yang ditampilin sesuai tab
   final List<Widget> _pages = [
     const DashboardView(),
     const HistoryView(),
@@ -29,16 +30,14 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    var isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF1A1C1E) : const Color(0xFFF9F9F9),
       body: _pages[_selectedIndex],
-
-      // extendBody: true bikin background halaman tembus ke bawah nav bar
       extendBody: true,
 
-      // Custom Bottom Nav Bar Melayang
+      // Custom bottom nav bar melayang
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
         decoration: BoxDecoration(

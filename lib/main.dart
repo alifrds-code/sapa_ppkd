@@ -9,14 +9,14 @@ import 'views/login_view.dart';
 import 'views/main_screen.dart';
 
 void main() async {
-  // Wajib ditambahin kalau kita mau ngecek memory HP sebelum aplikasi jalan
+  // Wajib dipanggil sebelum pakai async di main
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Cek apakah token udah ada di brankas HP
-  final bool isLoggedIn = await TokenStorage.hasToken();
+  // Cek apakah user udah login (ada token tersimpan atau belum)
+  var isLoggedIn = await TokenStorage.hasToken();
 
-  // Cek preferensi Dark Mode dari SharedPreferences
-  final bool isDarkMode = await ThemeStorage.getTheme();
+  // Cek settingan dark mode yang disimpan sebelumnya
+  var isDarkMode = await ThemeStorage.getTheme();
 
   runApp(MyApp(isLoggedIn: isLoggedIn, isDarkMode: isDarkMode));
 }
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
             title: 'SAPA PPKD',
             debugShowCheckedModeBanner: false,
 
-            // ---- LOCALIZATION (Wajib buat showDatePicker bahasa Indonesia) ----
+            // Biar bisa pakai bahasa Indonesia di date picker dll
             localizationsDelegates: const [
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
               Locale('id', 'ID'),
             ],
 
-            // ---- LIGHT THEME ----
+            // Tema terang
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: const Color(0xFF003F87),
@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
               scaffoldBackgroundColor: const Color(0xFFF9F9F9),
             ),
 
-            // ---- DARK THEME ----
+            // Tema gelap
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: const Color(0xFF003F87),
@@ -74,11 +74,10 @@ class MyApp extends StatelessWidget {
               cardColor: const Color(0xFF2C2E30),
             ),
 
-            // Gunakan preferensi dari ThemeProvider
+            // Pakai tema sesuai pilihan user
             themeMode: themeProvider.themeMode,
 
-            // Kalau isLoggedIn = true (ada token), langsung ke MainScreen.
-            // Kalau false (kosong), lempar ke LoginView.
+            // Kalau udah login langsung ke MainScreen, kalau belum ke LoginView
             home: isLoggedIn ? const MainScreen() : const LoginView(),
           );
         },

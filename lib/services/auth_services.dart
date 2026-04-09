@@ -4,7 +4,7 @@ import '../api/endpoint.dart';
 import '../models/batch_model.dart';
 
 class AuthService {
-  // Fungsi 1: Ngambil data Batch & Training buat Dropdown
+  // Ambil data batch & training dari server buat dropdown register
   Future<List<BatchModel>> getBatches() async {
     try {
       var response = await http.get(Uri.parse(Endpoints.batches));
@@ -12,8 +12,6 @@ class AuthService {
       if (response.statusCode == 200) {
         var jsonResponse = jsonDecode(response.body);
         List data = jsonResponse['data'];
-
-        // Ubah data JSON mentah jadi bentuk BatchModel yang rapi
         return data.map((e) => BatchModel.fromJson(e)).toList();
       } else {
         throw Exception("Gagal mengambil data Batch dari server");
@@ -23,7 +21,7 @@ class AuthService {
     }
   }
 
-  // Fungsi 2: Kirim data Register ke server
+  // Kirim data registrasi ke server
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -38,8 +36,7 @@ class AuthService {
         Uri.parse(Endpoints.register),
         headers: {
           'Content-Type': 'application/json',
-          'Accept':
-              'application/json', // Biar server tau kita minta balasan format JSON
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           "name": name,
@@ -54,21 +51,18 @@ class AuthService {
 
       var jsonResponse = jsonDecode(response.body);
 
-      // Status 200 atau 201 itu artinya sukses di REST API
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return jsonResponse['data']; // Balikin data token & info user
+        return jsonResponse['data'];
       } else {
-        // Nangkep pesan error dari server (Misal: "Email sudah terdaftar")
-        String errorMessage = jsonResponse['message'] ?? "Registrasi gagal";
+        var errorMessage = jsonResponse['message'] ?? "Registrasi gagal";
         throw Exception(errorMessage);
       }
     } catch (e) {
-      // Bersihin teks "Exception:" biar yang muncul di layar HP cuma pesan error-nya aja
       throw Exception(e.toString().replaceAll("Exception: ", ""));
     }
   }
 
-  // Fungsi 3: Proses Login
+  // Kirim data login ke server
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -85,12 +79,9 @@ class AuthService {
 
       var jsonResponse = jsonDecode(response.body);
 
-      // Status 200 berarti sukses
       if (response.statusCode == 200) {
         return jsonResponse['data'];
       } else {
-        // --- PERUBAHAN DI SINI ---
-        // Kita abaikan pesan dari server, dan paksa keluarin pesan seragam
         throw Exception("Email atau password salah.");
       }
     } catch (e) {

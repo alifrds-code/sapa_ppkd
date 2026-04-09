@@ -1,3 +1,4 @@
+// Model buat nampung data profil user dari API
 class ProfileModel {
   final int id;
   final String name;
@@ -17,6 +18,7 @@ class ProfileModel {
     this.profilePhotoUrl,
   });
 
+  // Ubah data JSON dari API jadi object ProfileModel
   factory ProfileModel.fromJson(Map<String, dynamic> json) {
     return ProfileModel(
       id: json['id'] ?? 0,

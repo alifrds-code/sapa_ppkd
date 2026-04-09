@@ -1,13 +1,14 @@
+// Kumpulan URL API yang dipake di aplikasi
 class Endpoints {
   static const String baseUrl = "https://appabsensi.mobileprojp.com";
 
-  // Auth
+  // Login & Register
   static const String register = "$baseUrl/api/register";
   static const String login = "$baseUrl/api/login";
   static const String forgotPassword = "$baseUrl/api/forgot-password";
   static const String resetPassword = "$baseUrl/api/reset-password";
 
-  // Profile
+  // Profil
   static const String profile = "$baseUrl/api/profile";
   static const String updateProfile = "$baseUrl/api/profile";
   static const String updatePhoto = "$baseUrl/api/profile/photo";
@@ -19,9 +20,10 @@ class Endpoints {
   static const String absenStats = "$baseUrl/api/absen/stats";
   static const String absenHistory = "$baseUrl/api/absen/history";
 
+  // Hapus data absen berdasarkan ID
   static String deleteAbsen(int id) => "$baseUrl/api/absen/$id";
 
-  // Izin (endpoint yg aktif di server: /api/izin, bukan /api/absen/izin)
+  // Izin
   static const String izin = "$baseUrl/api/izin";
 
   // Device Token
@@ -30,10 +32,10 @@ class Endpoints {
   // Users
   static const String users = "$baseUrl/api/users";
 
-  // Trainings (Public)
+  // Pelatihan
   static const String trainings = "$baseUrl/api/trainings";
   static String trainingDetail(int id) => "$baseUrl/api/trainings/$id";
 
-  // Batches
+  // Batch
   static const String batches = "$baseUrl/api/batches";
 }

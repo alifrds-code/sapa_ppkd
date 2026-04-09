@@ -1,3 +1,4 @@
+// Model buat riwayat absen
 class AbsenHistoryModel {
   final int id;
   final String attendanceDate;

@@ -1,5 +1,6 @@
 import 'training_model.dart';
 
+// Model buat data batch (di dalamnya ada list training)
 class BatchModel {
   final int id;
   final String batchKe;
@@ -12,11 +13,9 @@ class BatchModel {
   });
 
   factory BatchModel.fromJson(Map<String, dynamic> json) {
-    // Ini buat nangkep list training yang ada di dalam batch
+    // Ambil list training dari dalam data batch
     var list = json['trainings'] as List? ?? [];
-    List<TrainingModel> trainingList = list
-        .map((i) => TrainingModel.fromJson(i))
-        .toList();
+    var trainingList = list.map((i) => TrainingModel.fromJson(i)).toList();
 
     return BatchModel(
       id: json['id'],

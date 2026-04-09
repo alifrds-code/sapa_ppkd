@@ -1,3 +1,4 @@
+// Model buat data absen hari ini
 class AbsenTodayModel {
   final String? attendanceDate;
   final String? checkInTime;
