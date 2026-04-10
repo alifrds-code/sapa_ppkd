@@ -1,4 +1,4 @@
-package com.example.sapa_ppkd
+package com.ppkd.sapa_ppkd
 
 import io.flutter.embedding.android.FlutterActivity
 

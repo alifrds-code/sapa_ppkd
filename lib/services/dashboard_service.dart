@@ -99,7 +99,7 @@ class DashboardService {
     try {
       var headers = await _getHeaders();
 
-      var response = await http.post(
+      var response = await http.put(
         Uri.parse(Endpoints.updatePhoto),
         headers: headers,
         body: jsonEncode({"profile_photo": base64Image}),
